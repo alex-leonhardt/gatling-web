@@ -35,10 +35,15 @@ def check(simulation):
     app.logger.debug('Checking if ' + simulation + ' is running')
     procs = []
     _procs = psutil.process_iter()
+
     for proc in _procs:
-        procs.append(proc.as_dict(attrs=['name']))
-    if simulation in procs:
-        return True
+        procs.append(proc.as_dict(attrs=['cmdline']))
+
+    for pproc in procs:
+        for item in pproc['cmdline']:
+            if simulation in item:
+                return True
+
     return False
 
 
@@ -49,22 +54,22 @@ def sim_action(simulation, action):
 
         if action == 'start':
             p = subprocess.Popen([_GATLING_PATH + '/bin/gatling.sh', '-s',
-                                 _SIM_PATH, simulation, '&'],
-                                 shell=True,
-                                 stdout=subprocess.PIPE)
-            return p.communicate()[1]
+                                 simulation])
+            return True
 
         if action == 'stop':
             procs = []
             _procs = psutil.process_iter()
             for proc in _procs:
-                procs.append(proc.as_dict(attrs=['name', 'pid']))
-            if simulation in procs[0]:
-                p = subprocess.Popen(['kill -9', procs[1]],
-                                     shell=True,
-                                     stdout=subprocess.PIPE)
-                return p.communicate()[1]
+                procs.append(proc.as_dict(attrs=['pid', 'cmdline']))
 
+            for pproc in procs:
+                for item in pproc['cmdline']:
+                    if simulation and 'java' in item:
+                        app.logger.debug('Killing PID: ' + str(pproc['pid']))
+                        p = subprocess.Popen(['kill', str(pproc['pid'])],
+                                             stdout=subprocess.PIPE)
+                        return p.communicate()[1]
     return False
 
 
@@ -127,10 +132,10 @@ def gatling_simulation_action(simulation, action):
                 return json.dumps(_ret, indent=4)
 
         ret = sim_action(simulation, action)
-        if ret is True:
-            _ret = {"status": "success"}
+        if ret is None or True:
+            _ret = {"status": "success", "details": ret}
         else:
-            _ret = {"status": "failed"}
+            _ret = {"status": "failed", "details": ret}
 
     return json.dumps(_ret, indent=4)
 
