@@ -25,8 +25,8 @@ def exists(simulation):
     """Function to check if the simulation actually exists
     and returns true or false"""
     app.logger.debug('Checking if file '
-                     + _SIM_PATH + simulation + '.simulation exits')
-    return os.path.exists(_SIM_PATH + simulation + '.simulation')
+                     + _SIM_PATH + simulation + '.scala exits')
+    return os.path.exists(_SIM_PATH + simulation + '.scala')
 
 
 def check(simulation):
