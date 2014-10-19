@@ -2,7 +2,6 @@ gatling-web
 ===========
 
 A tiny flask app that one can use to trigger Gatling simulations via HTTP
-- Note: This is not yet fully functional/tested
 
 config
 ------
@@ -16,4 +15,16 @@ start the app
 ```
 python /path/to/gatling-web/app.py
 ```
+
+check status of simulation
+--------------------------
+http://ip:8080/gatling/{simulation_name}
+
+start a simulation
+------------------
+http://ip:8080/gatling/{simulation_name}/start
+
+stop a simulation
+------------------
+http://ip:8080/gatling/{simulation_name}/stop
 
