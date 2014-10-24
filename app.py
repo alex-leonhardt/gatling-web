@@ -12,6 +12,7 @@ import subprocess
 app = Flask(__name__, instance_relative_config=True)
 app.config['GATLING_PATH'] = '/opt/gatling'
 app.config['SIM_PATH'] = app.config['GATLING_PATH']+'/user-files/simulations/'
+app.config['REPORT_PATH'] = app.config['GATLING_PATH']+'/results/'
 app.config['DEBUG'] = False
 app.debug = app.config['DEBUG']
 app.config.from_envvar('CONFIG_FILE', silent=True)
@@ -19,6 +20,7 @@ app.config.from_envvar('CONFIG_FILE', silent=True)
 
 _GATLING_PATH = app.config['GATLING_PATH']
 _SIM_PATH = app.config['SIM_PATH']
+_REPORT_PATH = app.config['REPORT_PATH']
 
 
 def exists(simulation):
@@ -139,6 +141,19 @@ def gatling_simulation_action(simulation, action):
 
     return json.dumps(_ret, indent=4)
 
+
+@app.route('/gatling/<simulation>/reports', methods=['GET'])
+@app.route('/gatling/<simulation>/reports/', methods=['GET'])
+def gatling_simulation_reports(simulation):
+    """Returns a list of reports for the simulation in json format as
+    {\"reports\": \"['report1','report2',...]\"}"""
+
+    _retval = {"reports": []}
+
+    if exists(simulation):
+        return json.dumps(_retval)
+
+    return json.dumps(_retval)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
