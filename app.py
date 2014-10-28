@@ -7,6 +7,7 @@ import os.path
 import json
 import psutil
 import subprocess
+import zipfile
 
 
 app = Flask(__name__, instance_relative_config=True)
@@ -21,6 +22,12 @@ app.config.from_envvar('CONFIG_FILE', silent=True)
 _GATLING_PATH = app.config['GATLING_PATH']
 _SIM_PATH = app.config['SIM_PATH']
 _REPORT_PATH = app.config['REPORT_PATH']
+
+
+def zipdir(path, zip):
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            zip.write(os.path.join(root, file))
 
 
 def exists(simulation):
@@ -73,6 +80,45 @@ def sim_action(simulation, action):
                                              stdout=subprocess.PIPE)
                         return p.communicate()[1]
     return False
+
+
+def reports(simulation, action='find', report=None):
+    """Finds/lists a list of reports for simulation, default action is
+    to find the reports, can be set to:
+        -find
+        -download
+        """
+    lreports = []
+    if action == 'find':
+        simulation = simulation.lower()
+        app.logger.debug('Checking if '
+                         + _REPORT_PATH + ' exists.')
+        for item in os.listdir(_REPORT_PATH):
+            if simulation in item:
+                lreports.append(item)
+        return lreports
+
+    if action == 'download':
+        simulation = simulation.lower()
+        app.logger.debug('Checking if '
+                         + _REPORT_PATH + report + ' exists.')
+        if report:
+            if os.path.exists(_REPORT_PATH + report):
+                app.logger.debug('Found the path, now lets zip it up')
+                try:
+                    zipf = zipfile.ZipFile(report + '.zip', 'w')
+                    zipdir('/tmp/', zipf)
+                    zipf.close()
+                    return app.send_static_file('/tmp/' + report + '.zip')
+                except Exception as e:
+                    retval = "<h2>The following error occurred: </h2><br><h3>" \
+                             + e + "</h3>"
+                    return (retval, 500)
+            else:
+                return ("<h2>Error: Report " + report +
+                        " does not exist.</h2>", 404)
+        else:
+            return ("<h2>Error: No report name supplied.</h2>", 404)
 
 
 @app.route('/', methods=['GET'])
@@ -151,9 +197,17 @@ def gatling_simulation_reports(simulation):
     _retval = {"reports": []}
 
     if exists(simulation):
-        return json.dumps(_retval)
+        retval = reports(simulation, action='find')
+        _retval = {"reports": retval}
 
     return json.dumps(_retval)
+
+
+@app.route('/gatling/<simulation>/reports/<report>', methods=['GET'])
+def gatling_simulation_reports_download(simulation, report):
+    """Returns a report zip file"""
+    return reports(simulation, action='download', report=report)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
