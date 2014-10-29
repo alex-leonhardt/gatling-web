@@ -14,14 +14,18 @@ app = Flask(__name__, instance_relative_config=True)
 app.config['GATLING_PATH'] = '/opt/gatling'
 app.config['SIM_PATH'] = app.config['GATLING_PATH']+'/user-files/simulations/'
 app.config['REPORT_PATH'] = app.config['GATLING_PATH']+'/results/'
+app.config['TMP_PATH'] = ''
 app.config['DEBUG'] = False
 app.debug = app.config['DEBUG']
+app.static_url_path = app.config['TMP_PATH']
+app.static_folder = app.config['TMP_PATH']
 app.config.from_envvar('CONFIG_FILE', silent=True)
 
 
 _GATLING_PATH = app.config['GATLING_PATH']
 _SIM_PATH = app.config['SIM_PATH']
 _REPORT_PATH = app.config['REPORT_PATH']
+_TMP_PATH = app.config['TMP_PATH']
 
 
 def zipdir(path, zip):
@@ -105,15 +109,14 @@ def reports(simulation, action='find', report=None):
         if report:
             if os.path.exists(_REPORT_PATH + report):
                 app.logger.debug('Found the path, now lets zip it up')
+                zippedfile = _TMP_PATH + report + '.zip'
                 try:
-                    zipf = zipfile.ZipFile(report + '.zip', 'w')
-                    zipdir('/tmp/', zipf)
+                    zipf = zipfile.ZipFile(zippedfile, 'w')
+                    zipdir(_REPORT_PATH + report, zipf)
                     zipf.close()
-                    return app.send_static_file('/tmp/' + report + '.zip')
+                    return app.send_static_file(report + '.zip')
                 except Exception as e:
-                    retval = "<h2>The following error occurred: </h2><br><h3>" \
-                             + e + "</h3>"
-                    return (retval, 500)
+                    return e
             else:
                 return ("<h2>Error: Report " + report +
                         " does not exist.</h2>", 404)
