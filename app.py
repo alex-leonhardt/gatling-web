@@ -8,6 +8,7 @@ import json
 import psutil
 import subprocess
 import zipfile
+import re
 
 
 app = Flask(__name__, instance_relative_config=True)
@@ -32,6 +33,21 @@ def zipdir(path, zip):
     for root, dirs, files in os.walk(path):
         for file in files:
             zip.write(os.path.join(root, file))
+
+
+def sanitize(var):
+    """Sanitize function to replace characters that
+    are being replaced by gatling when e.g. generating
+    reports"""
+
+    chars = {
+        "_": "-"
+    }
+
+    for key, val in chars.items():
+        var = re.sub(key, val, var)
+
+    return var
 
 
 def exists(simulation):
@@ -95,6 +111,7 @@ def reports(simulation, action='find', report=None):
     lreports = []
     if action == 'find':
         simulation = simulation.lower()
+        simulation = sanitize(simulation)
         app.logger.debug('Checking if '
                          + _REPORT_PATH + ' exists.')
         for item in os.listdir(_REPORT_PATH):
@@ -107,6 +124,7 @@ def reports(simulation, action='find', report=None):
         app.logger.debug('Checking if '
                          + _REPORT_PATH + report + ' exists.')
         if report:
+            report = sanitize(report)
             if os.path.exists(_REPORT_PATH + report):
                 app.logger.debug('Found the path, now lets zip it up')
                 zippedfile = _TMP_PATH + report + '.zip'
