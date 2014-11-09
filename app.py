@@ -30,6 +30,7 @@ _TMP_PATH = app.config['TMP_PATH']
 
 
 def zipdir(path, zip):
+    os.chdir(_REPORT_PATH)
     for root, dirs, files in os.walk(path):
         for file in files:
             zip.write(os.path.join(root, file))
@@ -130,7 +131,7 @@ def reports(simulation, action='find', report=None):
                 zippedfile = _TMP_PATH + report + '.zip'
                 try:
                     zipf = zipfile.ZipFile(zippedfile, 'w')
-                    zipdir(_REPORT_PATH + report, zipf)
+                    zipdir(report, zipf)
                     zipf.close()
                     return app.send_static_file(report + '.zip')
                 except Exception as e:
