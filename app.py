@@ -1,4 +1,4 @@
-#! ../bin/python
+#! /usr/bin/python
 
 from flask import Flask
 from flask import url_for
@@ -84,8 +84,8 @@ def sim_action(simulation, action):
     if action == 'start' or action == 'stop':
 
         if action == 'start':
-            p = subprocess.Popen([_GATLING_PATH + '/bin/gatling.sh', '-s',
-                                 simulation])
+            p = subprocess.Popen([_GATLING_PATH + '/bin/gatling.sh', '-nr',
+                                  '-s', simulation])
             return True
 
         if action == 'stop':
